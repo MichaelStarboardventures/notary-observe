@@ -103,14 +103,9 @@ class Services implements ServicesProps {
     try {
       const sql = {
         GRAPHIN_DATA: this.getGraphinSection(key),
-        params: { clientId: 'f01072535' },
       };
 
-      const {
-        params: { clientId },
-      } = sql;
-
-      const result = await this.session.run(sql.GRAPHIN_DATA, { clientId });
+      const result = await this.session.run(sql.GRAPHIN_DATA, { id });
 
       return this.getCollectData(result?.records);
     } catch (e) {
@@ -118,24 +113,24 @@ class Services implements ServicesProps {
     }
   };
 
-  getGraphinSection = (key?: Key, id?: string) => {
+  getGraphinSection = (key?: Key) => {
     switch (key) {
       case 'c':
-        return `MATCH (c:Client {client_id: "f01398231"})
+        return `MATCH (c:Client {client_id: $id})
 OPTIONAL MATCH (c:Client)<-[r1:datacap_allocation]-(n:Verifier)
 OPTIONAL MATCH (c:Client)-[r2:datacap_spending]->(s:StorageProvider)
 RETURN n,r1,c,r2,s`;
       case 'p':
-        return `MATCH (s:StorageProvider {provider_id: "f0501283"})
+        return `MATCH (s:StorageProvider {provider_id: $id})
 OPTIONAL MATCH (c:Client)-[r2:datacap_spending]->(s)
 RETURN c,r2,s`;
       case 'v':
-        return `MATCH (n:Verifier {verifier_id: "f01072535"})
+        return `MATCH (n:Verifier {verifier_id: $id})
 OPTIONAL MATCH (c:Client)<-[r1:datacap_allocation]-(n)
 OPTIONAL MATCH (s:StorageProvider)<-[r2:datacap_spending]-(c)
 RETURN n,r1,c,r2,s`;
       default:
-        return `MATCH (n:Verifier {verifier_id: "f01072535"})
+        return `MATCH (n:Verifier {verifier_id: $id})
 OPTIONAL MATCH (c:Client)<-[r1:datacap_allocation]-(n)
 OPTIONAL MATCH (s:StorageProvider)<-[r2:datacap_spending]-(c)
 RETURN n,r1,c,r2,s`;
@@ -268,12 +263,14 @@ r2.total_spending_tib AS \`dataCapSpentTiB\` // 1.3.2`,
   };
 
   getNeighborList = async (
-    id: string,
-    type: string,
+    searchId: string,
+    id?: Key,
+    type?: string,
   ): Promise<Record<string, any>[]> => {
     try {
-      const sqlConfig: Record<string, string> = {
-        2: `
+      const sqlConfig: Record<string, Record<Key, string>> = {
+        2: {
+          v: `
           MATCH (n:Verifier)
           OPTIONAL MATCH (n)-[r1:datacap_allocation]->(c:Client)
           RETURN c.client_id AS \`clientId\`, // 4.2.1
@@ -284,47 +281,126 @@ r2.total_spending_tib AS \`dataCapSpentTiB\` // 1.3.2`,
           ELSE "N/A"
           END AS \`signers\` // 4.2.4
         `,
-        3: `
+          c: `
           MATCH (n:Verifier)
           OPTIONAL MATCH (n)-[r1:datacap_allocation]->(c:Client)
-          OPTIONAL MATCH (c:Client)-[r2:datacap_spending]->(s:StorageProvider)
-          RETURN DISTINCT(c.client_id) as \`clientId\`, // 4.1.1.1
-          c.client_name as \`clientName\`, // 4.1.1.2
-          c.client_address as \`clientAddress\`, // 4.1.1.3
-          c.onboarding_time as \`accountOnboardingTime\`, // 4.1.1.4
-          c.total_datacap_received_tib as \`totalDataCapReceived\`, // 4.1.1.5
-          100*c.total_datacap_spent_tib/c.total_datacap_received_tib as \`% of dataCapSpent\` // 4.1.1.6
+          RETURN c.client_id AS \`clientId\`, // 4.2.1
+          r1.total_allocation_tib AS \`allocationSize\`, // 4.2.2
+          r1.recent_allocation_time AS \`allocationTime\`, // 4.2.3
+          CASE n.verifier_type
+          WHEN "LDN" THEN n.verifier_id
+          ELSE "N/A"
+          END AS \`signers\` // 4.2.4
         `,
-        4: `
+          p: `
           MATCH (n:Verifier)
           OPTIONAL MATCH (n)-[r1:datacap_allocation]->(c:Client)
-          OPTIONAL MATCH (c:Client)-[r2:datacap_spending]->(s:StorageProvider)
-          RETURN s.provider_id as \`providerId\`, // 4.1.2.1
-          s.provider_address as \`providerAddress\`, // 4.1.2.2
-          s.onboarding_time as \`accountOnboardingTime\`, // 4.1.2.3
-          s.raw_byte_capacity_tib as \`rawBytePower\`, // 4.1.2.4
-          s.quality_adjusted_power_tib as \`qualityAdjustedPower\`, // 4.1.2.5
-          s.total_plusdeal_size_tib as \`verifiedDeal\`, // 4.1.2.6
-          count(distinct(n.verifier_id)) AS \`notaryHeadcount\`, // 4.1.2.7
-          count(distinct(c.client_id)) as \`clientHeadcount\` // 4.1.2.8
+          RETURN c.client_id AS \`clientId\`, // 4.2.1
+          r1.total_allocation_tib AS \`allocationSize\`, // 4.2.2
+          r1.recent_allocation_time AS \`allocationTime\`, // 4.2.3
+          CASE n.verifier_type
+          WHEN "LDN" THEN n.verifier_id
+          ELSE "N/A"
+          END AS \`signers\` // 4.2.4
         `,
+        },
+        3: {
+          v: `
+          MATCH (v:Verifier {verifier_id: $id})
+          OPTIONAL MATCH (c:Client)<-[a:datacap_allocation]-(v)
+          OPTIONAL MATCH (c)-[s:datacap_spending]->(p:StorageProvider)
+          RETURN c.client_id as \`clientId\`,
+          c.client_name as \`clientName\`,
+          c.client_address as \`clientAddress\`,
+          c.onboarding_time as \`accountOnboardingTime\`,
+          c.total_datacap_received_tib as \`totalDatacapReceived\`,
+          100*c.total_datacap_spent_tib/c.total_datacap_received_tib as \`datacapSpent\`
+        `,
+          c: `
+          MATCH (c:Client {client_id: $id})
+          OPTIONAL MATCH (c)<-[a:datacap_allocation]-(v:Verifier)
+          OPTIONAL MATCH (c)-[s:datacap_spending]->(p:StorageProvider)
+          OPTIONAL MATCH (v)-[]-(u:Client)-[]-(w:StorageProvider)
+          RETURN v.verifier_name as \`notaryName\`, // 8.1.1
+          v.verifier_id as \`notaryId\`, // 8.1.2
+          v.verifier_address as \`notaryAddress\`, // 8.1.3
+          v.onboarding_time as \`accountOnboardingTime\`, // 8.1.4
+          v.total_datacap_allocated_tib as \`totalDataCapAllocated\`, // 8.1.5
+          COUNT(DISTINCT u) as \`clientHeadcount\`, // 8.1.6
+          COUNT(DISTINCT w) as \`providerHeadcount\`
+        `,
+          p: `
+          MATCH (p:StorageProvider {provider_id: $id})
+          OPTIONAL MATCH (c:Client)-[s:datacap_spending]->(p)
+          OPTIONAL MATCH (c)<-[a:datacap_allocation]-(v:Verifier)
+          OPTIONAL MATCH (v)-[]-(u:Client)-[]-(w:StorageProvider)
+          RETURN v.verifier_name as \`notaryName\`, // 8.1.1
+          v.verifier_id as \`notaryId\`, // 8.1.2
+        `,
+        },
+        4: {
+          v: `
+          MATCH (v:Verifier {verifier_id: $id})
+          OPTIONAL MATCH (c:Client)<-[a:datacap_allocation]-(v)
+          OPTIONAL MATCH (c)-[s:datacap_spending]->(p:StorageProvider)
+          RETURN p.provider_id as \`providerId\`,
+          p.provider_address as \`providerAddress\`,
+          p.onboarding_time as \`accountOnboardingTime\`,
+          p.raw_byte_capacity_tib as \`rawBytePower\`,
+          p.quality_adjusted_power_tib as \`qualityAdjustedPower\`,
+          p.total_plusdeal_size_tib as \`verifiedDeal\`,
+          count(DISTINCT(v.verifier_id)) as \`notaryHeadcount\`,
+          count(DISTINCT(c.client_id)) as \`clientHeadcount\`
+        `,
+          c: `
+          MATCH (c:Client {client_id: $id})
+          OPTIONAL MATCH (c)<-[a:datacap_allocation]-(v:Verifier)
+          OPTIONAL MATCH (c)-[s:datacap_spending]->(p:StorageProvider)
+          RETURN p.provider_id as \`providerId\`,
+          p.provider_address as \`providerAddress\`,
+          p.onboarding_time as \`accountOnboardingTime\`,
+          p.raw_byte_capacity_tib as \`rawBytePower\`,
+          p.quality_adjusted_power_tib as \`qualityAdjustedPower\`,
+          p.total_plusdeal_size_tib as \`verifiedDeal\`,
+          count(DISTINCT(v.verifier_id)) as \`notaryHeadcount\`,
+          count(DISTINCT(c.client_id)) as \`clientHeadcount\`
+        `,
+          p: `
+          MATCH (p:StorageProvider {provider_id: $id})
+          OPTIONAL MATCH (c:Client)-[s:datacap_spending]->(p)
+          OPTIONAL MATCH (c)<-[a:datacap_allocation]-(v:Verifier)
+          RETURN c.client_id as \`clientId\`,
+          c.client_name as \`clientName\`,
+          c.client_address as \`clientAddress\`,
+          c.onboarding_time as \`accountOnboardingTime\`,
+          c.total_datacap_received_tib as \`totalDatacapReceived\`,
+          100*c.total_datacap_spent_tib/c.total_datacap_received_tib as \`datacapSpent\`
+        `,
+        },
       };
 
-      const res = await this.session.run(sqlConfig[type]);
+      const res = await this.session.run(sqlConfig[type || '3'][id || 'v'], {
+        id: searchId,
+      });
 
-      return res?.records?.reduce<Record<string, any>[]>((prev, cur) => {
-        const obj: Record<string | symbol, any> = {};
+      const result = res?.records?.reduce<Record<string, any>[]>(
+        (prev, cur) => {
+          const obj: Record<string | symbol, any> = {};
 
-        cur.keys.forEach((key) => {
-          const value = cur.get(key);
+          cur.keys.forEach((key) => {
+            const value = cur.get(key);
 
-          obj[key] = this.transRecordValue(value);
-        });
+            obj[key] = this.transRecordValue(value);
+          });
 
-        prev.push(obj);
+          prev.push(obj);
 
-        return prev;
-      }, []);
+          return prev;
+        },
+        [],
+      );
+
+      return result;
     } catch (e) {
       return [];
     }

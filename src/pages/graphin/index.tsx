@@ -9,15 +9,15 @@ import { GraphinWrapperStyled, GraphinStyled } from './style';
 import { GraphinData, IUserNode, IUserEdge } from '@antv/graphin';
 import { DetailContent } from '@/pages/graphin/detail-content';
 import { DetailItem } from '@/pages/graphin/detail-item';
-import { Col, Spin, Empty } from 'antd';
+import { Col, Spin, Empty, Radio, Input, Form } from 'antd';
+import { Search } from '@/components/search';
 import { history } from 'umi';
-import { request } from '@/utils';
 import { queryParse } from '@/utils';
 import { Details, UserType } from '@/pages/graphin/props';
 import clientIcon from '@/assets/2.png';
 import providerIcon from '@/assets/1.png';
 import verifierIcon from '@/assets/3.png';
-import services from '@/services';
+import services, { Key } from '@/services';
 
 export const GraphinDataContext = createContext<{
   nodes: Record<string, any>;
@@ -153,11 +153,11 @@ const Graphin: React.FC = () => {
   } = history;
   const { id: clientId } = queryParse(search.replace('?', ''));
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (key?: Key, id?: string) => {
     try {
       setLoading(true);
 
-      const res = await services.getGraphin();
+      const res = await services.getGraphin(key, id);
 
       setLoading(false);
 
@@ -179,8 +179,6 @@ const Graphin: React.FC = () => {
         // });
         const res = await services.getGraphinItem(clientId);
 
-        console.log(res, '-=-0-0-0-');
-
         setNodeId(id);
 
         setDetails(res as Details);
@@ -194,28 +192,31 @@ const Graphin: React.FC = () => {
   }, []);
 
   return (
-    <Spin spinning={loading}>
-      <GraphinDataContext.Provider value={data}>
-        <GraphinWrapperStyled>
-          {graphinData.nodes.length ? (
-            <GraphinStyled>
-              <Col flex={'auto'}>
-                <DetailContent
-                  data={graphinData}
-                  fetchDetails={fetchDetails}
-                  setData={setData}
-                />
-              </Col>
-              <Col flex={'190px'}>
-                <DetailItem details={details} nodeId={nodeId} />
-              </Col>
-            </GraphinStyled>
-          ) : (
-            <Empty />
-          )}
-        </GraphinWrapperStyled>
-      </GraphinDataContext.Provider>
-    </Spin>
+    <>
+      <Search fetchData={fetchData} />
+      <Spin spinning={loading}>
+        <GraphinDataContext.Provider value={data}>
+          <GraphinWrapperStyled>
+            {graphinData.nodes.length ? (
+              <GraphinStyled>
+                <Col flex={'auto'}>
+                  <DetailContent
+                    data={graphinData}
+                    fetchDetails={fetchDetails}
+                    setData={setData}
+                  />
+                </Col>
+                <Col flex={'190px'}>
+                  <DetailItem details={details} nodeId={nodeId} />
+                </Col>
+              </GraphinStyled>
+            ) : (
+              <Empty />
+            )}
+          </GraphinWrapperStyled>
+        </GraphinDataContext.Provider>
+      </Spin>
+    </>
   );
 };
 

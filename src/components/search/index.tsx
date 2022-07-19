@@ -1,0 +1,55 @@
+import { Key } from '@/services';
+import React, { useState } from 'react';
+import { Form, Input, Radio } from 'antd';
+
+export const Search = ({
+  fetchData,
+  onTabClick,
+  getSearchId,
+}: {
+  fetchData?: (key?: Key, id?: string) => void;
+  onTabClick?: (value: Key) => void;
+  getSearchId?: (id: string) => void;
+}) => {
+  const [tab, setTab] = useState<Key>('v');
+  const options = [
+    {
+      label: 'Notary',
+      value: 'v',
+    },
+    {
+      label: 'Client',
+      value: 'c',
+    },
+    {
+      label: 'Provider',
+      value: 'p',
+    },
+  ];
+
+  return (
+    <div style={{ width: 600, padding: 24 }}>
+      <Form.Item>
+        <Radio.Group
+          value={tab}
+          onChange={(e) => {
+            setTab(e.target.value);
+            onTabClick && onTabClick(e.target.value);
+          }}
+          options={options}
+        />
+      </Form.Item>
+      <Form.Item>
+        <Input.Search
+          placeholder={`Search ${
+            options.find((option) => option.value === tab)?.label
+          } Id`}
+          onSearch={(e) => {
+            fetchData && fetchData(tab, e);
+            getSearchId && getSearchId(e);
+          }}
+        />
+      </Form.Item>
+    </div>
+  );
+};

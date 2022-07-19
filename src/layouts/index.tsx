@@ -1,5 +1,4 @@
 import React from 'react';
-import enGB from 'antd/es/locale/en_GB';
 import {
   createIntl,
   ConfigProvider,
@@ -8,7 +7,6 @@ import {
 } from '@ant-design/pro-table';
 
 const Layout: React.FC = ({ children }) => {
-  console.log('dfdfdfdxxxfdfdf');
   return (
     <IntlProvider
       value={{
