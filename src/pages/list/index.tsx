@@ -306,15 +306,32 @@ const TableTab: React.FC<{
 };
 
 const SecondTabs = ({
+  currentKey,
   setCurrentTab,
   setDataSource,
 }: {
+  currentKey: Key;
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
   setDataSource: React.Dispatch<React.SetStateAction<Record<string, any>[]>>;
 }) => {
   useEffect(() => {
     setCurrentTab('3');
   }, []);
+
+  const tabs = {
+    v: [
+      { label: 'Client List', value: '3' },
+      { label: 'Provider List', value: '4' },
+    ],
+    c: [
+      { label: 'Notary List', value: '3' },
+      { label: 'Provider List', value: '4' },
+    ],
+    p: [
+      { label: 'Notary List', value: '3' },
+      { label: 'Client List', value: '4' },
+    ],
+  };
 
   return (
     <TableTabs
@@ -324,8 +341,11 @@ const SecondTabs = ({
         setDataSource([]);
       }}
     >
-      <TableTab value={'3'}>Client List</TableTab>
-      <TableTab value={'4'}>Provider List</TableTab>
+      {tabs[currentKey].map((tab) => (
+        <TableTab key={tab.value} value={tab.value}>
+          {tab.label}
+        </TableTab>
+      ))}
     </TableTabs>
   );
 };
@@ -374,6 +394,10 @@ const List = () => {
     setCurrentTab('3');
   }, []);
 
+  useEffect(() => {
+    currentId && fetchData(currentId, currentKey, currentTab);
+  }, [currentId, currentTab, currentKey]);
+
   return (
     <>
       <Search
@@ -397,6 +421,7 @@ const List = () => {
 
         {currentTab === '2' ? null : (
           <SecondTabs
+            currentKey={currentKey}
             setCurrentTab={setCurrentTab}
             setDataSource={setDataSource}
           />
