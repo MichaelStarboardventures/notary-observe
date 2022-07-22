@@ -78,16 +78,16 @@ const columnsConfig: Record<string, Record<string, ProColumns[]>> = {
     ],
     p: [
       {
-        title: 'Client Name',
-        dataIndex: 'clientName',
+        title: 'Notary Name',
+        dataIndex: 'notaryName',
       },
       {
-        title: 'Client ID',
-        dataIndex: 'clientId',
+        title: 'Notary ID',
+        dataIndex: 'notaryId',
       },
       {
-        title: 'Client Address',
-        dataIndex: 'clientAddress',
+        title: 'Notary Address',
+        dataIndex: 'notaryAddress',
       },
       {
         title: 'Account Onboarding Time',
