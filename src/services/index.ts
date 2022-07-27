@@ -330,12 +330,24 @@ r2.total_spending_tib AS \`dataCapSpentTiB\` // 1.3.2`,
           COUNT(DISTINCT w) as \`providerHeadcount\`
         `,
           p: `
+          // MATCH (p:StorageProvider {provider_id: $id})
+          // OPTIONAL MATCH (c:Client)-[s:datacap_spending]->(p)
+          // OPTIONAL MATCH (c)<-[a:datacap_allocation]-(v:Verifier)
+          // OPTIONAL MATCH (v)-[]-(u:Client)-[]-(w:StorageProvider)
+          // RETURN v.verifier_name as \`notaryName\`, // 8.1.1
+          // v.verifier_id as \`notaryId\`, // 8.1.2
+
           MATCH (p:StorageProvider {provider_id: $id})
           OPTIONAL MATCH (c:Client)-[s:datacap_spending]->(p)
           OPTIONAL MATCH (c)<-[a:datacap_allocation]-(v:Verifier)
           OPTIONAL MATCH (v)-[]-(u:Client)-[]-(w:StorageProvider)
           RETURN v.verifier_name as \`notaryName\`, // 8.1.1
           v.verifier_id as \`notaryId\`, // 8.1.2
+          v.verifier_address as \`notaryAddress\`, // 8.1.3
+          v.onboarding_time as \`accountOnboardingTime\`, // 8.1.4
+          v.total_datacap_allocated_tib as \`totalDataCapAllocated\`, // 8.1.5
+          COUNT(DISTINCT u) as \`clientHeadcount\`, // 8.1.6
+          COUNT(DISTINCT w) as \`providerHeadcount\` // 8.1.7
         `,
         },
         4: {

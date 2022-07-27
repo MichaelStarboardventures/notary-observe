@@ -94,12 +94,16 @@ const columnsConfig: Record<string, Record<string, ProColumns[]>> = {
         dataIndex: 'accountOnboardingTime',
       },
       {
-        title: 'Total DataCap Received(TiB)',
-        dataIndex: 'totalDatacapReceived',
+        title: 'Total DataCap Allocated(TiB)',
+        dataIndex: 'totalDataCapAllocated',
       },
       {
-        title: '% of DataCap Spent',
-        dataIndex: 'datacapSpent',
+        title: 'Client Headcount',
+        dataIndex: 'clientHeadcount',
+      },
+      {
+        title: 'Provider Headcount',
+        dataIndex: 'providerHeadcount',
       },
     ],
   },
@@ -416,7 +420,7 @@ const List = () => {
           }}
         >
           <TableTab value={'1'}>Neighbor List</TableTab>
-          <TableTab value={'2'}>Activity List</TableTab>
+          {/*<TableTab value={'2'}>Activity List</TableTab>*/}
         </TableTabs>
 
         {currentTab === '2' ? null : (
