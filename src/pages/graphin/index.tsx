@@ -193,7 +193,7 @@ const Graphin: React.FC = () => {
 
   return (
     <>
-      <Search fetchData={fetchData} />
+      <Search fetchData={fetchData} isClient />
       <Spin spinning={loading}>
         <GraphinDataContext.Provider value={data}>
           <GraphinWrapperStyled>

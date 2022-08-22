@@ -6,26 +6,35 @@ export const Search = ({
   fetchData,
   onTabClick,
   getSearchId,
+  isClient,
 }: {
   fetchData?: (key?: Key, id?: string) => void;
   onTabClick?: (value: Key) => void;
   getSearchId?: (id: string) => void;
+  isClient?: boolean;
 }) => {
-  const [tab, setTab] = useState<Key>('v');
-  const options = [
-    {
-      label: 'Notary',
-      value: 'v',
-    },
-    {
-      label: 'Client',
-      value: 'c',
-    },
-    {
-      label: 'Provider',
-      value: 'p',
-    },
-  ];
+  const options: { label: string; value: Key }[] = isClient
+    ? [
+        {
+          label: 'Client',
+          value: 'c',
+        },
+      ]
+    : [
+        {
+          label: 'Notary',
+          value: 'v',
+        },
+        {
+          label: 'Client',
+          value: 'c',
+        },
+        {
+          label: 'Provider',
+          value: 'p',
+        },
+      ];
+  const [tab, setTab] = useState<Key>(options[0]['value']);
 
   return (
     <div style={{ width: 600, padding: 24 }}>
