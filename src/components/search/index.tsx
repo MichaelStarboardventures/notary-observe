@@ -13,27 +13,20 @@ export const Search = ({
   getSearchId?: (id: string) => void;
   isClient?: boolean;
 }) => {
-  const options: { label: string; value: Key }[] = isClient
-    ? [
-        {
-          label: 'Client',
-          value: 'c',
-        },
-      ]
-    : [
-        {
-          label: 'Notary',
-          value: 'v',
-        },
-        {
-          label: 'Client',
-          value: 'c',
-        },
-        {
-          label: 'Provider',
-          value: 'p',
-        },
-      ];
+  const options: { label: string; value: Key }[] = [
+    {
+      label: 'Notary',
+      value: 'v',
+    },
+    {
+      label: 'Client',
+      value: 'c',
+    },
+    {
+      label: 'Provider',
+      value: 'p',
+    },
+  ];
   const [tab, setTab] = useState<Key>(options[0]['value']);
 
   return (
